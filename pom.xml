@@ -17,7 +17,7 @@
     <scm>
         <url>https://github.com/brekka/commons.git</url>
         <connection>https://github.com/brekka/commons.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:/brekka/commons.git</developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com/brekka/commons.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
