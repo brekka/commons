@@ -72,7 +72,9 @@ public class ByteLengthFormat extends Format {
         }
         int exponent = (int) (Math.log(value) / Math.log(mode.getDivisor()));
         String shortPrefix = mode.getShortPrefix()[exponent - 1];
-        new Formatter(toAppendTo, locale).format(FORMAT_STR, value / Math.pow(mode.getDivisor(), exponent), shortPrefix);
+        try (Formatter formatter = new Formatter(toAppendTo, locale);) {
+            formatter.format(FORMAT_STR, value / Math.pow(mode.getDivisor(), exponent), shortPrefix);
+        }
     }
 
     /* (non-Javadoc)

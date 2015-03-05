@@ -115,6 +115,7 @@ public abstract class BaseException extends RuntimeException implements ErrorCod
      * returned. This method will never return null.
      * @return the errorCode.
      */
+    @Override
     public ErrorCode getErrorCode() {
         return this.errorCode;
     }
@@ -122,6 +123,7 @@ public abstract class BaseException extends RuntimeException implements ErrorCod
     /* (non-Javadoc)
      * @see org.brekka.commons.lang.ErrorCoded#getMessage(java.util.Locale, boolean)
      */
+    @Override
     public String getMessage(Locale locale, boolean prefixCode) {
         return Utils.formatLocalizedMessage(
                 prefixCode ? getErrorCode() : ErrorCode.NO_ERROR_CODE, 

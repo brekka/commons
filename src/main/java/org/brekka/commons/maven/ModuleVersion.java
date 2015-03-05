@@ -40,6 +40,7 @@ public final class ModuleVersion implements Serializable {
      * Generates a timestamp of the format "yyyyMMddHHmm".
      */
     public static final NotFoundVersion TIMESTAMP = new NotFoundVersion() {
+        @Override
         public String getVersion() {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
             return sdf.format(new Date());
@@ -197,6 +198,7 @@ public final class ModuleVersion implements Serializable {
         public NotFoundString(String notFoundString) {
             this.notFoundString = notFoundString;
         }
+        @Override
         public String getVersion() {
             return notFoundString;
         }
@@ -212,6 +214,7 @@ public final class ModuleVersion implements Serializable {
             this.groupId = groupId;
             this.artifactId = artifactId;
         }
+        @Override
         public String getVersion() {
             throw new IllegalStateException(String.format(
                     "Unable to locate version for Maven module with groupId '%s' and artifactId '%s'",

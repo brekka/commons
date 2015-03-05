@@ -29,16 +29,21 @@ import java.util.List;
  * @author Andrew Taylor (andrew@brekka.org)
  */
 public class StringListWriter extends Writer {
-    
-    private final List<String> list = new ArrayList<String>();
-    
+
+    private final List<String> list = new ArrayList<>();
+
     private StringBuffer line = new StringBuffer();
+
+    private boolean closed = false;
 
     /* (non-Javadoc)
      * @see java.io.Writer#write(char[], int, int)
      */
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
+        if (this.closed) {
+            throw new IllegalStateException("This writer is closed");
+        }
         for (int i = off; i < off + len; i++) {
             char c = cbuf[i];
             if (c == '\r') {
@@ -46,10 +51,10 @@ public class StringListWriter extends Writer {
                 continue;
             }
             if (c == '\n') {
-                list.add(line.toString());
-                line = new StringBuffer();
+                this.list.add(this.line.toString());
+                this.line = new StringBuffer();
             } else {
-                line.append(c);
+                this.line.append(c);
             }
         }
     }
@@ -66,20 +71,26 @@ public class StringListWriter extends Writer {
      * @see java.io.Writer#close()
      */
     @Override
-    public void close() throws IOException {
-        if (line.length() > 0) {
-            list.add(line.toString());
+    public void close() {
+        if (this.closed) {
+            return;
         }
+        if (this.line.length() > 0) {
+            this.list.add(this.line.toString());
+        }
+        this.closed = true;
     }
-    
+
     /**
      * @return the list
      */
     public List<String> toList() {
-        if (list.isEmpty()) {
+        // Make sure we are closed
+        close();
+        if (this.list.isEmpty()) {
             return Collections.emptyList();
         }
-        return list;
+        return this.list;
     }
 
 }

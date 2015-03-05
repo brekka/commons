@@ -86,7 +86,9 @@ public interface ErrorCode {
      * Constant used when no code is specified
      */
     ErrorCode NO_ERROR_CODE = new ErrorCode() {
+        @Override
         public int getNumber() { return 0; }
+        @Override
         public Area getArea() { return NO_AREA; }
     };
 
@@ -199,6 +201,7 @@ public interface ErrorCode {
                 /**
                  * The id of this area
                  */
+                @Override
                 public String getID() { return areaCode; }
                 @Override
                 public boolean equals(Object obj) {
@@ -244,9 +247,11 @@ public interface ErrorCode {
                 final Area area = createArea(m.group(1));
                 final int number = Integer.parseInt(m.group(2));
                 errorCode = new ErrorCode() {
+                    @Override
                     public Area getArea() {
                         return area;
                     }
+                    @Override
                     public int getNumber() {
                         return number;
                     }
