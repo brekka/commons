@@ -18,8 +18,10 @@ package org.brekka.commons.io;
 
 import static org.junit.Assert.*;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.Writer;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -88,11 +90,16 @@ public class StringReplacingWriterTest {
         test("Bob \\u0000 test with a twist of something else \\u0000 for this test \\u89 \\10 Test");
     }
     
+    @Test
+    public void repeating() throws Exception {
+        test("Bob \\\u0000 test \\\\u0000with a twist \u0000 of \\\\\u0000 something else \\u0000 for this test \\u89 \\10 Test");
+    }
+    
     protected void test(String text) throws IOException {
         StringWriter sw = new StringWriter();
-        try (StringReplacingWriter srw = new StringReplacingWriter(sw, "\\u0000", "\\\\u0000");) {
-            srw.write(text);
-            srw.close();
+        try (StringReplacingWriter srw = new StringReplacingWriter(sw, "\\u0000", "\\\\u0000");
+                Writer w = new BufferedWriter(srw, 16)) {
+            w.write(text);
         }
         assertEquals(text.replace("\\u0000", "\\\\u0000"), sw.toString());
     }

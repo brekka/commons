@@ -18,6 +18,7 @@ package org.brekka.commons.io;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.BufferedReader;
 import java.io.StringReader;
 
 import org.apache.commons.io.IOUtils;
@@ -87,10 +88,16 @@ public class StringReplacingReaderTest {
         test("Bob \\\\u0000 test with a twist of something else \\\\u0000 for this test \\\\u89 \\10 Test");
     }
     
+    @Test
+    public void repeating() throws Exception {
+        test("Bob \\\u0000 test \\\\u0000with a \\\\\\u0000 twist \u0000 of \\\\\u0000 something \\\\\\\u0000else \\u0000 for this test \\u89 \\10 Test");
+    }
+    
     protected void test(String val) throws Exception {
         StringReader sr = new StringReader(val);
         StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\u0000");
-        String result = IOUtils.toString(srr);
+        BufferedReader br = new BufferedReader(srr, 16);
+        String result = IOUtils.toString(br);
         assertEquals(val.replace("\\\\u0000", "\\u0000"), result);
     }
 }

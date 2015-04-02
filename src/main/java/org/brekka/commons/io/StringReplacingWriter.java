@@ -18,6 +18,8 @@ package org.brekka.commons.io;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.CharBuffer;
+import java.util.Arrays;
 
 /**
  * TODO Description of StringReplacingWriter
@@ -31,10 +33,8 @@ public class StringReplacingWriter extends Writer {
     
     private final char[] replaceWith;
     
-    private final char[] candidates;
+    private final CharBuffer buf;
     
-    private int length = 0;
-
     /**
      * @param writer
      * @param find
@@ -44,7 +44,7 @@ public class StringReplacingWriter extends Writer {
         this.writer = writer;
         this.find = find.toCharArray(); // Won't change
         this.replaceWith = replaceWith.toCharArray(); // Won't change
-        this.candidates = new char[this.find.length];
+        this.buf = CharBuffer.allocate(this.find.length);
     }
 
     /* (non-Javadoc)
@@ -52,34 +52,19 @@ public class StringReplacingWriter extends Writer {
      */
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
-        int offset = 0;
-        for (int i = 0; i < cbuf.length; i++) {
-            char c = cbuf[i];
-            candidates[length] = c;
-            if (find[length] == c) {
-                length++;
-                if (length == find.length) {
-                    // Found it
-                    // Write what we have up to this point
-                    writer.write(cbuf, offset, i - offset - find.length + 1);
-                    // Write replacement
+        for (int i = off; i < len; i++) {
+            buf.append(cbuf[i]);
+            if (buf.remaining() == 0) {
+                if (Arrays.equals(buf.array(), find)) {
                     writer.write(replaceWith, 0, replaceWith.length);
-                    offset = i + 1;
-                    length = 0;
-                } 
-            } else if (length > 0) {
-                // Write what we have up to this point
-                writer.write(cbuf, offset, i - offset - length);
-                // Dump the candidates
-                writer.write(candidates, 0, length + 1);
-                offset = i + 1;
-                length = 0;
-            } else {
-                // Reset
-                length = 0;
+                    buf.rewind();
+                } else {
+                    writer.write(buf.get(0));
+                    buf.position(1);
+                    buf.compact();
+                }
             }
         }
-        writer.write(cbuf, offset, len - offset);
     }
 
     /* (non-Javadoc)
@@ -87,8 +72,9 @@ public class StringReplacingWriter extends Writer {
      */
     @Override
     public void flush() throws IOException {
-        if (length > 0) {
-            writer.write(candidates, 0, length);
+        if (buf.position() > 0) {
+            writer.write(buf.array(), 0, buf.position());
+            buf.clear();
         }
         writer.flush();
     }
