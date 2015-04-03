@@ -74,13 +74,12 @@ public class StringReplacingWriter extends Writer {
 
     @Override
     public void flush() throws IOException {
-        writer.write(locator.purge());
         writer.flush();
     }
 
     @Override
     public void close() throws IOException {
-        flush();
+        writer.write(locator.purge());
         writer.close();
     }
 }
