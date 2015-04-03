@@ -99,7 +99,8 @@ public class StringReplacingReaderTest {
 
     protected void test(final String val, final String expected) throws Exception {
         StringReader sr = new StringReader(val);
-        try (StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\\\uFFF8", "\\")) {
+        CharSequenceLocator locator = new CharSequenceLocator("\\\\u0000", "\\");
+        try (StringReplacingReader srr = new StringReplacingReader(sr, locator, "\\\\uFFF8")) {
             // Small buffer size to test bounds
             char[] buf = new char[16];
             int cnt = 0;

@@ -16,6 +16,8 @@
 
 package org.brekka.commons.io;
 
+import java.util.Objects;
+
 /**
  * Helper class for identifying a character sequence within a stream of characters. This is implemented internally
  * as a cyclic buffer.
@@ -57,7 +59,7 @@ public class CharSequenceLocator {
      * @param toLocate
      *            the character sequence to locate
      */
-    public CharSequenceLocator(final char[] toLocate) {
+    public CharSequenceLocator(final String toLocate) {
         this(toLocate, null);
     }
 
@@ -66,10 +68,11 @@ public class CharSequenceLocator {
      *            the character sequence to locate
      * @param mustNotFollow
      */
-    public CharSequenceLocator(final char[] toLocate, final char[] mustNotFollow) {
-        this.toLocate = toLocate;
-        this.mustNotFollow = mustNotFollow;
-        this.buffer = new char[toLocate.length + (mustNotFollow != null ? mustNotFollow.length : 0)];
+    public CharSequenceLocator(final String toLocate, final String mustNotFollow) {
+        Objects.requireNonNull(toLocate, "The string to locate must be specified");
+        this.toLocate = toLocate.toCharArray();
+        this.mustNotFollow = mustNotFollow != null ? mustNotFollow.toCharArray() : null;
+        this.buffer = new char[this.toLocate.length + (this.mustNotFollow != null ? this.mustNotFollow.length : 0)];
     }
 
     /**

@@ -18,6 +18,7 @@ package org.brekka.commons.io;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Objects;
 
 /**
  * Stream based {@link String} replacement as a {@link Writer}. It is recommended that the {@link Writer} be buffered as
@@ -45,19 +46,18 @@ public class StringReplacingWriter extends Writer {
     /**
      * @param writer
      *            the destination for the character data that has been filtered for replacement.
-     * @param find
-     *            the string to find
+     * @param locator
+     *            used to locate the string to replace
      * @param replacement
      *            the string to replace any found occurrences with.
-     * @param mustNotFollow
-     *            optional string that must not precede the <code>find</code>
      */
-    public StringReplacingWriter(final Writer writer, final String find, final String replacement,
-            final String mustNotFollow) {
+    public StringReplacingWriter(final Writer writer, final CharSequenceLocator locator, final String replacement) {
+        Objects.requireNonNull(writer, "A writer must be specified");
+        Objects.requireNonNull(locator, "A locator must be specified");
+        Objects.requireNonNull(replacement, "A replacement must be specified");
         this.writer = writer;
         this.replacement = replacement.toCharArray(); // Won't change
-        this.locator = new CharSequenceLocator(find.toCharArray(),
-                mustNotFollow != null ? mustNotFollow.toCharArray() : null);
+        this.locator = locator;
     }
 
 

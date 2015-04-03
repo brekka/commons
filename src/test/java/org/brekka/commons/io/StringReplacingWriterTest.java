@@ -105,7 +105,8 @@ public class StringReplacingWriterTest {
 
     protected void test(final String text, final String expected) throws IOException {
         StringWriter sw = new StringWriter();
-        try (StringReplacingWriter srw = new StringReplacingWriter(sw, "\\u0000", "\\uFFF8", "\\");
+        CharSequenceLocator locator = new CharSequenceLocator("\\u0000", "\\");
+        try (StringReplacingWriter srw = new StringReplacingWriter(sw, locator, "\\uFFF8");
                 // Choose a small buffer size to test boundaries
                 Writer w = new BufferedWriter(srw, 16)) {
             w.write(text);

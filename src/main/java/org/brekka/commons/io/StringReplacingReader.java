@@ -19,6 +19,7 @@ package org.brekka.commons.io;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.CharBuffer;
+import java.util.Objects;
 
 /**
  * Stream based {@link String} replacement as a {@link Reader}.
@@ -55,18 +56,17 @@ public class StringReplacingReader extends Reader {
     /**
      * @param reader
      *            the source of character data that will be filtered for replacement.
-     * @param find
-     *            the string to find
+     * @param locator
+     *            used to locate the string to replace
      * @param replacement
      *            the string to replace any found occurrences with.
-     * @param mustNotFollow
-     *            optional string that must not precede the <code>find</code>
      */
-    public StringReplacingReader(final Reader reader, final String find, final String replacement,
-            final String mustNotFollow) {
+    public StringReplacingReader(final Reader reader, final CharSequenceLocator locator, final String replacement) {
+        Objects.requireNonNull(reader, "A reader must be specified");
+        Objects.requireNonNull(locator, "A locator must be specified");
+        Objects.requireNonNull(replacement, "A replacement must be specified");
         this.reader = reader;
-        this.locator = new CharSequenceLocator(find.toCharArray(),
-                mustNotFollow != null ? mustNotFollow.toCharArray() : null);
+        this.locator = locator;
         this.replaceWith = CharBuffer.wrap(replacement.toCharArray());
     }
 
