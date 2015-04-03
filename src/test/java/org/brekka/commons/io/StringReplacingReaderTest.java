@@ -90,13 +90,16 @@ public class StringReplacingReaderTest {
         test("alpha \\\\u0000 beta charlie \\\\u0000 delta foxtrot \\\\u89 \\10 golf");
     }
     @Test
-    public void repeating() throws Exception {
-        test("alpha \\\u0000 beta \\\\u0000charlie \\\\\\u0000 delta \u0000 foxtrot \\\\\u0000 golf \\\\\\\u0000hotel \\u0000 india juliett kilo \\u89 \\10 lima");
+    public void notPreceding() throws Exception {
+        test("alpha \\\\u0000 bravo \\u0000", "alpha \\\\uFFF8 bravo \\u0000");
+    }
+    protected void test(final String val) throws Exception {
+        test(val, val.replaceAll("\\\\u0000", "\\\\uFFF8"));
     }
 
-    protected void test(final String val) throws Exception {
+    protected void test(final String val, final String expected) throws Exception {
         StringReader sr = new StringReader(val);
-        try (StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\u0000")) {
+        try (StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\\\uFFF8", "\\")) {
             // Small buffer size to test bounds
             char[] buf = new char[16];
             int cnt = 0;
@@ -105,7 +108,8 @@ public class StringReplacingReaderTest {
                 sb.append(buf, 0, cnt);
             }
             String result = sb.toString();
-            assertEquals(val.replace("\\\\u0000", "\\u0000"), result);
+            assertEquals(expected, result);
         }
     }
+
 }

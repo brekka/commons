@@ -49,17 +49,21 @@ public class StringReplacingWriter extends Writer {
      *            the string to find
      * @param replacement
      *            the string to replace any found occurrences with.
+     * @param mustNotFollow
+     *            optional string that must not precede the <code>find</code>
      */
-    public StringReplacingWriter(final Writer writer, final String find, final String replacement) {
+    public StringReplacingWriter(final Writer writer, final String find, final String replacement,
+            final String mustNotFollow) {
         this.writer = writer;
         this.replacement = replacement.toCharArray(); // Won't change
-        this.locator = new CharSequenceLocator(find.toCharArray());
+        this.locator = new CharSequenceLocator(find.toCharArray(),
+                mustNotFollow != null ? mustNotFollow.toCharArray() : null);
     }
 
 
     @Override
     public void write(final char[] cbuf, final int off, final int len) throws IOException {
-        for (int i = off; i < len; i++) {
+        for (int i = off; i < (off + len); i++) {
             boolean replacing = locator.isReplacing();
             char displaced = locator.append(cbuf[i]);
             if (replacing) {

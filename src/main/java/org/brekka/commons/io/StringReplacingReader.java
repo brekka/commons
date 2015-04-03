@@ -59,10 +59,14 @@ public class StringReplacingReader extends Reader {
      *            the string to find
      * @param replacement
      *            the string to replace any found occurrences with.
+     * @param mustNotFollow
+     *            optional string that must not precede the <code>find</code>
      */
-    public StringReplacingReader(final Reader reader, final String find, final String replacement) {
+    public StringReplacingReader(final Reader reader, final String find, final String replacement,
+            final String mustNotFollow) {
         this.reader = reader;
-        this.locator = new CharSequenceLocator(find.toCharArray());
+        this.locator = new CharSequenceLocator(find.toCharArray(),
+                mustNotFollow != null ? mustNotFollow.toCharArray() : null);
         this.replaceWith = CharBuffer.wrap(replacement.toCharArray());
     }
 

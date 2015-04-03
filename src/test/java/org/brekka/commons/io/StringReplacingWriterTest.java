@@ -93,17 +93,23 @@ public class StringReplacingWriterTest {
         test("alpha \\u0000 beta charlie delta echo \\u0000 foxtrot golf hotel \\u89 \\10 india");
     }
     @Test
-    public void repeating() throws Exception {
-        test("alpha \\\u0000 beta \\\\u0000charlie delta \u0000 echo \\\\\u0000 foxtrot golf \\u0000 hotel india \\u89 \\10 juliett");
+    public void notPreceding() throws Exception {
+        // No replacement
+        test("alpha \\\\u0000 beta", "alpha \\\\u0000 beta");
     }
 
+
     protected void test(final String text) throws IOException {
+        test(text, text.replace("\\u0000", "\\uFFF8"));
+    }
+
+    protected void test(final String text, final String expected) throws IOException {
         StringWriter sw = new StringWriter();
-        try (StringReplacingWriter srw = new StringReplacingWriter(sw, "\\u0000", "\\\\u0000");
+        try (StringReplacingWriter srw = new StringReplacingWriter(sw, "\\u0000", "\\uFFF8", "\\");
                 // Choose a small buffer size to test boundaries
                 Writer w = new BufferedWriter(srw, 16)) {
             w.write(text);
         }
-        assertEquals(text.replace("\\u0000", "\\\\u0000"), sw.toString());
+        assertEquals(expected, sw.toString());
     }
 }

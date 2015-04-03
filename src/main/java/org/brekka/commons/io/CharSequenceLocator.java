@@ -29,6 +29,11 @@ public class CharSequenceLocator {
     private final char[] toLocate;
 
     /**
+     * Sequence of characters that must not precede the string being looked for.
+     */
+    private final char[] mustNotFollow;
+
+    /**
      * The cyclic buffer
      */
     private final char[] buffer;
@@ -44,12 +49,27 @@ public class CharSequenceLocator {
     private int length;
 
     /**
+     * How many additional characters are available.
+     */
+    private int followLength;
+
+    /**
      * @param toLocate
      *            the character sequence to locate
      */
     public CharSequenceLocator(final char[] toLocate) {
+        this(toLocate, null);
+    }
+
+    /**
+     * @param toLocate
+     *            the character sequence to locate
+     * @param mustNotFollow
+     */
+    public CharSequenceLocator(final char[] toLocate, final char[] mustNotFollow) {
         this.toLocate = toLocate;
-        this.buffer = new char[toLocate.length];
+        this.mustNotFollow = mustNotFollow;
+        this.buffer = new char[toLocate.length + (mustNotFollow != null ? mustNotFollow.length : 0)];
     }
 
     /**
@@ -66,10 +86,17 @@ public class CharSequenceLocator {
             if (toLocate[i] != buffer[cursor]) {
                 return false;
             }
-            cursor--;
-            if (cursor < 0) {
-                cursor = buffer.length - 1;
+            cursor = decrement(cursor, 1);
+        }
+        if (mustNotFollow != null
+                && followLength == mustNotFollow.length) {
+            for (int i = mustNotFollow.length - 1; i >= 0; i--) {
+                if (mustNotFollow[i] != buffer[cursor]) {
+                    return true;
+                }
+                cursor = decrement(cursor, 1);
             }
+            return false;
         }
         return true;
     }
@@ -81,7 +108,7 @@ public class CharSequenceLocator {
      *         off the head of the sequence.
      */
     public boolean isReplacing() {
-        return length == buffer.length;
+        return length == toLocate.length;
     }
 
     /**
@@ -101,8 +128,12 @@ public class CharSequenceLocator {
         }
         if (length < toLocate.length) {
             length++;
+        } else if (mustNotFollow != null
+                && followLength < mustNotFollow.length) {
+            followLength++;
         }
-        char replaced = buffer[tailPointer];
+        int replaceIndex = decrement(tailPointer, toLocate.length);
+        char replaced = buffer[replaceIndex];
         buffer[tailPointer] = character;
         return replaced;
     }
@@ -126,10 +157,7 @@ public class CharSequenceLocator {
         int cursor = tailPointer;
         for (int i = arr.length - 1; i >= 0; i--) {
             arr[i] = buffer[cursor];
-            cursor--;
-            if (cursor < 0) {
-                cursor = buffer.length - 1;
-            }
+            cursor = decrement(cursor, 1);
         }
         length = 0;
         return arr;
@@ -141,5 +169,14 @@ public class CharSequenceLocator {
     public void clear() {
         tailPointer = 0;
         length = 0;
+        followLength = 0;
+    }
+
+    private int decrement(int cursor, final int amount) {
+        cursor -= amount;
+        if (cursor < 0) {
+            cursor = buffer.length + cursor;
+        }
+        return cursor;
     }
 }
