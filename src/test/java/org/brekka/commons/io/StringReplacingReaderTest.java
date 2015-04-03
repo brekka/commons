@@ -18,14 +18,12 @@ package org.brekka.commons.io;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.BufferedReader;
 import java.io.StringReader;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 /**
- * TODO Description of StringReplacingReaderTest
+ * Tests for {@link StringReplacingReader}
  *
  * @author Andrew Taylor
  */
@@ -36,8 +34,12 @@ public class StringReplacingReaderTest {
         test("");
     }
     @Test
+    public void noEscapeTiny() throws Exception {
+        test("AB");
+    }
+    @Test
     public void noEscapeShort() throws Exception {
-        test("test");
+        test("alpha");
     }
     @Test
     public void noEscapeLong() throws Exception {
@@ -45,59 +47,65 @@ public class StringReplacingReaderTest {
     }
     @Test
     public void atStart() throws Exception {
-        test("\\\\u0000 and some text");
+        test("\\\\u0000 alpha beta charlie");
     }
     @Test
     public void atEnd() throws Exception {
-        test("and some text \\\\u0000");
+        test("alpha beta charlie \\\\u0000");
     }
     @Test
     public void inMiddle() throws Exception {
-        test("and some \\\\u0000 text");
+        test("alpha beta \\\\u0000 charlie");
     }
     @Test
     public void multipleWithStart() throws Exception {
-        test("\\\\u0000 and \\\\u0000 some \\\\u0000 text");
+        test("\\\\u0000 alpha \\\\u0000 beta \\\\u0000 charlie");
     }
     @Test
     public void multipleWithEnd() throws Exception {
-        test("and \\\\u0000 some \\\\u0000 text\\\\u0000");
+        test("alpha \\\\u0000 beta \\\\u0000 charlie\\\\u0000");
     }
     @Test
     public void multiple() throws Exception {
-        test("and \\\\u0000 some \\\\u0000 text\\\\u0000 test");
-    }  
+        test("alpha \\\\u0000 beta \\\\u0000 charlie\\\\u0000 delta");
+    }
     @Test
     public void consecutive() throws Exception {
-        test("\\\\u0000 and \\\\u0000\\\\u0000 some \\\\u0000\\\\u0000\\\\u0000\\\\u0000 text\\\\u0000 test \\\\u0000");
-    }    
+        test("\\\\u0000 alpha \\\\u0000\\\\u0000 beta \\\\u0000\\\\u0000\\\\u0000\\\\u0000 charlie\\\\u0000 delta \\\\u0000");
+    }
     @Test
     public void partialStart() throws Exception {
-        test("\\\\u0001 test");
-    }   
+        test("\\\\u0001 alpha");
+    }
     @Test
     public void partialEnd() throws Exception {
-        test("test \\u0001 ");
+        test("alpha \\u0001 ");
     }
     @Test
     public void partialMiddle() throws Exception {
-        test("test \\\\u1000 other");
-    }  
+        test("alpha \\\\u1000 beta");
+    }
     @Test
     public void mixture() throws Exception {
-        test("Bob \\\\u0000 test with a twist of something else \\\\u0000 for this test \\\\u89 \\10 Test");
+        test("alpha \\\\u0000 beta charlie \\\\u0000 delta foxtrot \\\\u89 \\10 golf");
     }
-    
     @Test
     public void repeating() throws Exception {
-        test("Bob \\\u0000 test \\\\u0000with a \\\\\\u0000 twist \u0000 of \\\\\u0000 something \\\\\\\u0000else \\u0000 for this test \\u89 \\10 Test");
+        test("alpha \\\u0000 beta \\\\u0000charlie \\\\\\u0000 delta \u0000 foxtrot \\\\\u0000 golf \\\\\\\u0000hotel \\u0000 india juliett kilo \\u89 \\10 lima");
     }
-    
-    protected void test(String val) throws Exception {
+
+    protected void test(final String val) throws Exception {
         StringReader sr = new StringReader(val);
-        StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\u0000");
-        BufferedReader br = new BufferedReader(srr, 16);
-        String result = IOUtils.toString(br);
-        assertEquals(val.replace("\\\\u0000", "\\u0000"), result);
+        try (StringReplacingReader srr = new StringReplacingReader(sr, "\\\\u0000", "\\u0000")) {
+            // Small buffer size to test bounds
+            char[] buf = new char[16];
+            int cnt = 0;
+            StringBuilder sb = new StringBuilder();
+            while ((cnt = srr.read(buf, 0, buf.length)) != -1) {
+                sb.append(buf, 0, cnt);
+            }
+            String result = sb.toString();
+            assertEquals(val.replace("\\\\u0000", "\\u0000"), result);
+        }
     }
 }

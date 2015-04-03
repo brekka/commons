@@ -18,106 +18,106 @@ package org.brekka.commons.io;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.CharBuffer;
 
 /**
- * TODO Description of StringReplacingReader
+ * Stream based {@link String} replacement as a {@link Reader}.
  *
  * @author Andrew Taylor (andrew@brekka.org)
  */
 public class StringReplacingReader extends Reader {
+    /**
+     * The reader to obtain the character data from
+     */
     private final Reader reader;
 
-    private final char[] find;
-    
-    private final char[] replaceWith;
-    
-    private final char[] buffer;
-    private final char[] candidates;
-    
-    private int index = -1;
-    private int position = 0;
-    private int available = 0;
-    
-    private char[] output;
-    private int outputIndex;
-    private int outputLength;
+    /**
+     * Locate the string being searched for from the characters being fed in one-by-one.
+     */
+    private final CharSequenceLocator locator;
 
-    public StringReplacingReader(Reader reader, String find, String replaceWith) {
+    /**
+     * Template {@link CharBuffer} of the string to replace any found occurrences with.
+     */
+    private final CharBuffer replaceWith;
+
+    /**
+     * Buffer of characters waiting to be written (in the event that they won't fit into the current
+     * character buffer).
+     */
+    private CharBuffer pending;
+
+    /**
+     * Tracks when the end of stream is reached.
+     */
+    private boolean endOfStream = false;
+
+    /**
+     * @param reader
+     *            the source of character data that will be filtered for replacement.
+     * @param find
+     *            the string to find
+     * @param replacement
+     *            the string to replace any found occurrences with.
+     */
+    public StringReplacingReader(final Reader reader, final String find, final String replacement) {
         this.reader = reader;
-        this.find = find.toCharArray(); // Won't change
-        this.replaceWith = replaceWith.toCharArray(); // Won't change
-        this.buffer = new char[128]; // Whatever length
-        this.candidates = new char[this.find.length];
+        this.locator = new CharSequenceLocator(find.toCharArray());
+        this.replaceWith = CharBuffer.wrap(replacement.toCharArray());
     }
 
-    /* (non-Javadoc)
-     * @see java.io.Reader#read(char[], int, int)
+    /**
+     * Read directly into a {@link CharBuffer}. This is the most allocation-efficient method as the only allocation will
+     * be when the tail is appended.
      */
     @Override
-    public int read(char[] cbuf, int off, int len) throws IOException {
-        if (available == -1) {
-            return available;
-        }
-        int count = 0;
-        outerloop:
-        for (int i = off; i < len; i++) {
-            char c = 0;
-            if (output != null) {
-                c = output[outputIndex];
-                outputIndex++;
-                if (outputIndex == outputLength) {
-                    output = null;
+    public int read(final CharBuffer target) throws IOException {
+        int remaining = target.remaining();
+        while (target.hasRemaining()) {
+            if (pending != null) {
+                while (target.hasRemaining() && pending.hasRemaining()) {
+                    target.put(pending.get());
                 }
-            } else {
-                while (available != -1) {
-                    if (index == -1 || index == available) {
-                        // Fetch data
-                        available = reader.read(buffer, 0, buffer.length);
-                        if (available == -1) {
-                            // No more bytes, break out of outermost loop
-                            break outerloop;
-                        }
-                        index = 0;
-                    }
-                    c = buffer[index++];
-                    candidates[position] = c;
-                    if (c == find[position]) {
-                        position++;
-                        if (position == find.length) {
-                            // We have found the string, begin writing back the replacement
-                            output = replaceWith;
-                            outputIndex = 0;
-                            c = output[outputIndex++];
-                            outputLength = output.length;
-                            position = 0;
-                        } else {
-                            // Keep fetching more values
-                            continue;
-                        }
-                    } else {
-                        if (position > 0) {
-                            // Need to write back what is in the buffer
-                            output = candidates;
-                            outputIndex = 1;
-                            outputLength = position + 1;
-                        }
-                        c = candidates[0];
-                        // Reset position
-                        position = 0;
-                    }
-                    // We have a value for c, break out of the inner loop
+                if (!pending.hasRemaining()) {
+                    pending.rewind();
+                    pending = null;
+                }
+            } else if (endOfStream) {
+                if (remaining != target.remaining()){
+                    // Some data has been added during this invocation, need to return that count.
                     break;
                 }
+                return -1;
+            } else {
+                int c = reader.read();
+                if (c == -1) {
+                    pending = CharBuffer.wrap(locator.purge());
+                    endOfStream = true;
+                    continue;
+                }
+                boolean replacing = locator.isReplacing();
+                char displaced = locator.append((char) c);
+                if (replacing) {
+                    target.append(displaced);
+                }
+                if (locator.isFound()) {
+                    // Will be consumed, need to return a duplicate.
+                    pending = replaceWith;
+                    locator.clear();
+                }
             }
-            cbuf[i] = c;
-            count++;
         }
-        return count;
+        return remaining - target.remaining();
     }
 
-    /* (non-Javadoc)
-     * @see java.io.Reader#close()
+    /**
+     * Less efficient read method that allocates a new CharBuffer on each call.
      */
+    @Override
+    public int read(final char[] cbuf, final int off, final int len) throws IOException {
+        return read(CharBuffer.wrap(cbuf, off, len));
+    }
+
     @Override
     public void close() throws IOException {
         reader.close();

@@ -18,70 +18,66 @@ package org.brekka.commons.io;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.CharBuffer;
-import java.util.Arrays;
 
 /**
- * TODO Description of StringReplacingWriter
+ * Stream based {@link String} replacement as a {@link Writer}. It is recommended that the {@link Writer} be buffered as
+ * this implementation calls the single-character {@link Writer#write(int)} method.
  *
  * @author Andrew Taylor (andrew@brekka.org)
  */
 public class StringReplacingWriter extends Writer {
+
+    /**
+     * The writer to output the resulting character stream to.
+     */
     private final Writer writer;
 
-    private final char[] find;
-    
-    private final char[] replaceWith;
-    
-    private final CharBuffer buf;
-    
+    /**
+     * The replacement for any strings found.
+     */
+    private final char[] replacement;
+
+    /**
+     * Locate the string being searched for from the characters being fed in one-by-one.
+     */
+    private final CharSequenceLocator locator;
+
     /**
      * @param writer
+     *            the destination for the character data that has been filtered for replacement.
      * @param find
-     * @param replaceWith
+     *            the string to find
+     * @param replacement
+     *            the string to replace any found occurrences with.
      */
-    public StringReplacingWriter(Writer writer, String find, String replaceWith) {
+    public StringReplacingWriter(final Writer writer, final String find, final String replacement) {
         this.writer = writer;
-        this.find = find.toCharArray(); // Won't change
-        this.replaceWith = replaceWith.toCharArray(); // Won't change
-        this.buf = CharBuffer.allocate(this.find.length);
+        this.replacement = replacement.toCharArray(); // Won't change
+        this.locator = new CharSequenceLocator(find.toCharArray());
     }
 
-    /* (non-Javadoc)
-     * @see java.io.Writer#write(char[], int, int)
-     */
+
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
         for (int i = off; i < len; i++) {
-            buf.append(cbuf[i]);
-            if (buf.remaining() == 0) {
-                if (Arrays.equals(buf.array(), find)) {
-                    writer.write(replaceWith, 0, replaceWith.length);
-                    buf.rewind();
-                } else {
-                    writer.write(buf.get(0));
-                    buf.position(1);
-                    buf.compact();
-                }
+            boolean replacing = locator.isReplacing();
+            char displaced = locator.append(cbuf[i]);
+            if (replacing) {
+                writer.write(displaced);
+            }
+            if (locator.isFound()) {
+                writer.write(replacement, 0, replacement.length);
+                locator.clear();
             }
         }
     }
 
-    /* (non-Javadoc)
-     * @see java.io.Writer#flush()
-     */
     @Override
     public void flush() throws IOException {
-        if (buf.position() > 0) {
-            writer.write(buf.array(), 0, buf.position());
-            buf.clear();
-        }
+        writer.write(locator.purge());
         writer.flush();
     }
 
-    /* (non-Javadoc)
-     * @see java.io.Writer#close()
-     */
     @Override
     public void close() throws IOException {
         flush();
