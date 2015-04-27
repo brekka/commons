@@ -177,7 +177,8 @@ public final class ModuleVersion implements Serializable {
      * @return
      */
     private static String preparePath(String groupId, String artifactId) {
-        String pomPropsPath = String.format("META-INF/maven/%s/%s/pom.properties", groupId, artifactId);
+        // Tomcat 8 requires leading slash.
+        String pomPropsPath = String.format("/META-INF/maven/%s/%s/pom.properties", groupId, artifactId);
         return pomPropsPath;
     }
 
